@@ -26,25 +26,26 @@ find_library(COREIMAGE CoreImage)
 find_library(OPENGL OpenGL)
 
 target_link_libraries(streamer PUBLIC 
-    avdevice 
-    avformat
-    avfilter
-    avcodec 
-    avutil
-    swresample
-    swscale
-    z
-    lzma
-    bz2
-    ${FOUNDATION_FRAMEWORK}
-    ${AVFOUNDATION_FRAMEWORK}
-    ${COREMEDIA_FRAMEWORK}
-    ${COREVIDEO_FRAMEWORK}
-    ${APPKIT_FRAMEWORK}
-    ${VIDEOTOOLBOX_FRAMEWORK}
-    ${AUDIOTOOLBOX_FRAMEWORK}
-    ${COREAUDIO_FRAMEWORK}
-    ${SECURITY_FRAMEWORK}
-    ${COREIMAGE}
-    ${OPENGL}
+    avdevice # Devices: camera, mic, screen
+    avformat # IO: files, rtsp, http, rtp
+    avfilter # Video filters: scale, blur, overlays
+    avcodec # Codecs: H264, AAC, MJPEG, encode/decode
+    avutil # Utils: logs, memory, structures
+    swresample # Audio recsample - frequency, format
+    swscale # Vide scake - RGB - YUV, resize
+    z #zlib
+    lzma # tiff, other codecs
+    bz2 # bzip, could be in containers like matroska
+    # macOS frameworks
+    ${FOUNDATION_FRAMEWORK} # Objective-C runtime Apple API
+    ${AVFOUNDATION_FRAMEWORK} # MacOS camera API
+    ${COREMEDIA_FRAMEWORK} # Timings, buffers, mediastructures
+    ${COREVIDEO_FRAMEWORK} # Work with video buffers
+    ${APPKIT_FRAMEWORK} # UI
+    ${VIDEOTOOLBOX_FRAMEWORK} # H264 hardware encode/decode
+    ${AUDIOTOOLBOX_FRAMEWORK} # Low-level audio API
+    ${COREAUDIO_FRAMEWORK} # System audio stack
+    ${SECURITY_FRAMEWORK} # TLS, SSL, HTTPS, RTSP over TLS
+    ${COREIMAGE} #avfilter's GPU filters
+    ${OPENGL} #GPU rendering for coreimage and scaling
 )
