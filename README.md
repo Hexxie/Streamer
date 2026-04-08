@@ -75,6 +75,9 @@ Fill the file with the script
 ### Note for me about ffmpeg:
 
 libavformat/	-> demux/mux (RTSP is here!)
+
 libavcodec/ ->	encode/decode
+
 libavdevice/	-> camera (avfoundation here)
+
 libavutil/	-> utils
