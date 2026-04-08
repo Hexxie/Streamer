@@ -32,7 +32,15 @@ make install
 
 4. Your libraries would be in /usr/local/lib and headers in /usr/local/include
 
-5. You can setup you vscode to navigate ffmpeg source code
+5. To build the project create a build folder and make it
+```
+mkdir build
+cd build
+cmake ..
+make
+```
+
+## Setup you vscode to navigate ffmpeg source code
 ```
 touch .vscode/c_cpp_proprties.json
 ```
