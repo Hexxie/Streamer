@@ -1,6 +1,6 @@
 # Streamer
 
-This is a playground app to play around with vide streaming libs using my macs camera.
+This is a playground app to play around with video streaming libs using my macs camera.
 
 ## Goals: 
 - Investigate RTSP protocol
@@ -20,7 +20,7 @@ opus sdl shtool texi2html theora wget x264 x265 xvid nasm
 
 2. Download ffmpeg source code from github
 ```
-git clone
+git clone https://github.com/FFmpeg/FFmpeg.git
 ```
 
 3. Now you can build ffmpeg and libs
