@@ -3,6 +3,7 @@
 
 #include "AVFoundationInput.hpp"
 #include "VideoDecoder.hpp"
+#include "FileOutput.hpp"
 
 extern "C"
 {
@@ -51,13 +52,8 @@ int main()
   // -------------------------
   // 3. Create output mp4
   // -------------------------
-  AVFormatContext *output_ctx = nullptr;
-  ret = avformat_alloc_output_context2(&output_ctx, nullptr, "mp4", "output.mp4");
-  if (ret < 0 || !output_ctx)
-  {
-    std::cerr << "Failed to create output context\n";
-    return 1;
-  }
+  streamer::FileOutput output("output.mp4", "mp4");
+  AVFormatContext *output_ctx = output.getOutputContext();
 
   // -------------------------
   // 4. Open encoder
