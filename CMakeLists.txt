@@ -18,6 +18,9 @@ add_subdirectory(src)
 
 add_executable(streamer main.cpp)
 
+target_compile_options(streamer PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
+target_link_options(streamer PRIVATE -fsanitize=address)
+
 target_include_directories(streamer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

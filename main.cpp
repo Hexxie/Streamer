@@ -4,6 +4,9 @@
 #include "AVFoundationInput.hpp"
 #include "VideoDecoder.hpp"
 #include "FileOutput.hpp"
+#include "Mp4Encoder.hpp"
+
+#include "FFmpegError.hpp"
 
 extern "C"
 {
@@ -58,57 +61,21 @@ int main()
   // -------------------------
   // 4. Open encoder
   // -------------------------
-  const AVCodec *encoder = avcodec_find_encoder_by_name("h264_videotoolbox");
-  if (!encoder)
-  {
-    std::cerr << "Encoder libx264rgb not found\n";
-    avformat_free_context(output_ctx);
-    return 1;
-  }
+streamer::Mp4Encoder encoder;
 
   AVStream *out_stream = avformat_new_stream(output_ctx, nullptr);
   if (!out_stream)
   {
     std::cerr << "Failed to create output stream\n";
-    avformat_free_context(output_ctx);
     return 1;
   }
 
-  AVCodecContext *encoder_ctx = avcodec_alloc_context3(encoder);
-  if (!encoder_ctx)
-  {
-    std::cerr << "Could not allocate encoder context\n";
-    avformat_free_context(output_ctx);
-    return 1;
-  }
-
-  encoder_ctx->codec_id = encoder->id;
-  encoder_ctx->codec_type = AVMEDIA_TYPE_VIDEO;
-  encoder_ctx->width = decoder_ctx->width;
-  encoder_ctx->height = decoder_ctx->height;
-  encoder_ctx->time_base = AVRational{1, 30};
-  encoder_ctx->framerate = AVRational{30, 1};
-
-  // Для libx264rgb зазвичай підходить RGB24.
-  // Якщо впаде на open2 - значить треба буде подивитися реальний frame->format
-  // і/або додати swscale.
-  encoder_ctx->pix_fmt = AV_PIX_FMT_NV12;
-  encoder_ctx->gop_size = 12;
-  encoder_ctx->max_b_frames = 0;
-  encoder_ctx->bit_rate = 2'000'000;
-
-  // корисно для mp4
-  if (output_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-  {
-    encoder_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-  }
-
-  ret = avcodec_open2(encoder_ctx, encoder, nullptr);
-  if (ret < 0)
-  {
-    std::cerr << "Failed to open encoder: ";
-    print_error(ret);
-    avformat_free_context(output_ctx);
+  AVCodecContext *encoder_ctx = encoder.getMp4EncoderContext();
+  encoder.applySettings(decoder_ctx->width, decoder_ctx->height);
+  try {
+    encoder.open();
+  } catch (streamer::FFmpegError e) {
+    std::cerr << "Unable to open encoder. Forcefully close the program! ";
     return 1;
   }
 
@@ -117,7 +84,6 @@ int main()
   {
     std::cerr << "Failed to copy encoder params to output stream: ";
     print_error(ret);
-    avformat_free_context(output_ctx);
     return 1;
   }
 
@@ -133,7 +99,6 @@ int main()
     {
       std::cerr << "Failed to open output file: ";
       print_error(ret);
-      avformat_free_context(output_ctx);
       return 1;
     }
   }
@@ -144,7 +109,6 @@ int main()
     std::cerr << "Failed to write mp4 header: ";
     print_error(ret);
     avio_closep(&output_ctx->pb);
-    avformat_free_context(output_ctx);
     return 1;
   }
 
@@ -165,7 +129,6 @@ int main()
     std::cerr << "Failed to create sws context\n";
     av_write_trailer(output_ctx);
     avio_closep(&output_ctx->pb);
-    avformat_free_context(output_ctx);
     return 1;
   }
 
@@ -192,7 +155,6 @@ int main()
     av_frame_free(&enc_frame);
     av_write_trailer(output_ctx);
     avio_closep(&output_ctx->pb);
-    avformat_free_context(output_ctx);
     return 1;
   }
 
@@ -205,7 +167,6 @@ int main()
     av_frame_free(&enc_frame);
     av_write_trailer(output_ctx);
     avio_closep(&output_ctx->pb);
-    avformat_free_context(output_ctx);
     return 1;
   }
 
@@ -377,8 +338,6 @@ cleanup:
   {
     sws_freeContext(sws_ctx);
   }
-
-  avformat_free_context(output_ctx);
 
   std::cout << "Done. Wrote output.mp4\n";
   return 0;

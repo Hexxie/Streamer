@@ -2,6 +2,9 @@ file(GLOB SRC_FILES *.cpp)
 
 add_library(streamer_lib ${SRC_FILES})
 
+target_compile_options(streamer_lib PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
+target_link_options(streamer_lib PRIVATE -fsanitize=address)
+
 target_include_directories(streamer_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     /usr/local/include
