@@ -5,6 +5,7 @@
 #include "VideoDecoder.hpp"
 #include "FileOutput.hpp"
 #include "Mp4Encoder.hpp"
+#include "VideoFrameConverter.hpp"
 
 #include "FFmpegError.hpp"
 
@@ -52,17 +53,36 @@ int main()
   streamer::VideoDecoder decoder(input, input.getVideoStreamIdx());
   AVCodecContext *decoder_ctx = decoder.getDecoderContext();
 
+
   // -------------------------
-  // 3. Create output mp4
+  // 3. Open encoder
+  // -------------------------
+  streamer::Mp4Encoder encoder;
+
+
+  AVCodecContext *encoder_ctx = encoder.getMp4EncoderContext();
+  encoder.applySettings(decoder_ctx->width, decoder_ctx->height);
+
+  try {
+    encoder.open();
+  } catch (streamer::FFmpegError& e) {
+    std::cerr << "Unable to open encoder. Forcefully close the program! ";
+    return 1;
+  }
+
+  // -------------------------
+  // 3. Open sws video converter
+  // -------------------------
+  streamer::VideoFrameConverter videoConvertor(decoder, encoder);
+  SwsContext *sws_ctx = videoConvertor.getSwsContext();
+
+  // -------------------------
+  // 4. Create output mp4
   // -------------------------
   streamer::FileOutput output("output.mp4", "mp4");
   AVFormatContext *output_ctx = output.getOutputContext();
 
-  // -------------------------
-  // 4. Open encoder
-  // -------------------------
-streamer::Mp4Encoder encoder;
-
+  // Create stream
   AVStream *out_stream = avformat_new_stream(output_ctx, nullptr);
   if (!out_stream)
   {
@@ -70,15 +90,7 @@ streamer::Mp4Encoder encoder;
     return 1;
   }
 
-  AVCodecContext *encoder_ctx = encoder.getMp4EncoderContext();
-  encoder.applySettings(decoder_ctx->width, decoder_ctx->height);
-  try {
-    encoder.open();
-  } catch (streamer::FFmpegError e) {
-    std::cerr << "Unable to open encoder. Forcefully close the program! ";
-    return 1;
-  }
-
+  // Copy encoder paramethers to the stream
   ret = avcodec_parameters_from_context(out_stream->codecpar, encoder_ctx);
   if (ret < 0)
   {
@@ -87,50 +99,10 @@ streamer::Mp4Encoder encoder;
     return 1;
   }
 
-  out_stream->time_base = encoder_ctx->time_base;
-
   // -------------------------
   // 5. Open output file
   // -------------------------
-  if (!(output_ctx->oformat->flags & AVFMT_NOFILE))
-  {
-    ret = avio_open(&output_ctx->pb, "output.mp4", AVIO_FLAG_WRITE);
-    if (ret < 0)
-    {
-      std::cerr << "Failed to open output file: ";
-      print_error(ret);
-      return 1;
-    }
-  }
-
-  ret = avformat_write_header(output_ctx, nullptr);
-  if (ret < 0)
-  {
-    std::cerr << "Failed to write mp4 header: ";
-    print_error(ret);
-    avio_closep(&output_ctx->pb);
-    return 1;
-  }
-
-  // Create Sws context
-  SwsContext *sws_ctx = sws_getContext(
-      decoder_ctx->width,
-      decoder_ctx->height,
-      decoder_ctx->pix_fmt,
-      encoder_ctx->width,
-      encoder_ctx->height,
-      encoder_ctx->pix_fmt,
-      SWS_BILINEAR,
-      nullptr,
-      nullptr,
-      nullptr);
-  if (!sws_ctx)
-  {
-    std::cerr << "Failed to create sws context\n";
-    av_write_trailer(output_ctx);
-    avio_closep(&output_ctx->pb);
-    return 1;
-  }
+  output.open();
 
   // -------------------------
   // 6. Read/decode/encode/write loop
@@ -189,12 +161,6 @@ streamer::Mp4Encoder encoder;
       print_error(ret);
       break;
     }
-
-    //if (pkt->stream_index != video_stream_index)
-    //{
-   //   av_packet_unref(pkt);
-  //    continue;
-  //  }
 
     ret = avcodec_send_packet(decoder_ctx, pkt);
     av_packet_unref(pkt);
@@ -329,15 +295,6 @@ cleanup:
   av_packet_free(&out_pkt);
   av_frame_free(&frame);
   av_frame_free(&enc_frame);
-
-  if (!(output_ctx->oformat->flags & AVFMT_NOFILE))
-  {
-    avio_closep(&output_ctx->pb);
-  }
-  if (sws_ctx)
-  {
-    sws_freeContext(sws_ctx);
-  }
 
   std::cout << "Done. Wrote output.mp4\n";
   return 0;

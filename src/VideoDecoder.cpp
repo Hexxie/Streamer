@@ -1,7 +1,7 @@
 #include "VideoDecoder.hpp"
 #include "FFmpegError.hpp"
 
-streamer::VideoDecoder::VideoDecoder( streamer::AVFoundationInput &input, int stream_idx) {
+streamer::VideoDecoder::VideoDecoder(streamer::AVFoundationInput &input, int stream_idx) {
   // To do - think about better way to use context. We've already passed C++ object here
   AVStream *in_stream = input.getContext()->streams[input.getVideoStreamIdx()];
 
@@ -35,4 +35,14 @@ streamer::VideoDecoder::~VideoDecoder() {
 
 AVCodecContext *streamer::VideoDecoder::getDecoderContext() const{
   return decoder_ctx.get();
+}
+
+int streamer::VideoDecoder::getWidth() const {
+  return decoder_ctx->width;
+}
+int streamer::VideoDecoder::getHeight() const {
+  return decoder_ctx->height;
+}
+AVPixelFormat streamer::VideoDecoder::getPixelFormat() const {
+  return decoder_ctx->pix_fmt;
 }

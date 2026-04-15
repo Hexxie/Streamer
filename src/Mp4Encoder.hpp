@@ -15,6 +15,10 @@ namespace streamer {
     AVCodecContext *getMp4EncoderContext() const;
     AVCodecID getEncoderId() const;
 
+    int getWidth() const;
+    int getHeight() const;
+    AVPixelFormat getPixelFormat() const;
+
     void applySettings(int width, int height);
     void open();
   private:

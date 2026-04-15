@@ -47,3 +47,15 @@ void streamer::Mp4Encoder::open() {
       throw FFmpegError("Failed to open encoder:", ret);
   }
 }
+
+int streamer::Mp4Encoder::getWidth() const {
+  return encoder_ctx->width;
+}
+
+int streamer::Mp4Encoder::getHeight() const {
+  return encoder_ctx->height;
+}
+
+AVPixelFormat streamer::Mp4Encoder::getPixelFormat() const {
+  return encoder_ctx->pix_fmt;
+}

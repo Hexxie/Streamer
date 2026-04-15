@@ -15,6 +15,9 @@ namespace streamer {
     VideoDecoder(streamer::AVFoundationInput &input, int stream_idx);
     ~VideoDecoder();
     AVCodecContext *getDecoderContext() const;
+    int getWidth() const;
+    int getHeight() const;
+    AVPixelFormat getPixelFormat() const;
   private:
     struct AVCodecContextDeleter {
         void operator()(AVCodecContext* ctx) const {

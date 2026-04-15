@@ -11,8 +11,11 @@ namespace streamer {
   class FileOutput {
   public:
     FileOutput(std::string filename, std::string file_format);
-
+    ~FileOutput();
     AVFormatContext *getOutputContext() const;
+
+    void open();
+    void close();
   private:
   struct FileOutputDeleter {
         void operator()(AVFormatContext* ctx) const {
@@ -23,6 +26,9 @@ namespace streamer {
     };
 
     std::unique_ptr<AVFormatContext, FileOutputDeleter> output_ctx;
+    std::string filename = "unknown.mp4";
+    bool header_written = false;
+    bool trailer_written = false;
   };
 }
 
